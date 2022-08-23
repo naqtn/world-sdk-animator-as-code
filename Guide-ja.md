@@ -57,6 +57,18 @@
 * 見進めて（using や namespace などは飛ばして）まず最初の `public class GenExample0_ToggleGo : MonoBehaviour` が先ほど Inspector で見ていたコンポーネントです。
   - このコンポーネントは Inspector で値を設定するための public なメンバー変数を定義しています。
   このコンポーネントはそれだけのために定義されていて、より実質的な内容は次に続く custom editor に書かれています
+* （以下掲載するコード片は、見やすい様にコメントを取り除くなどの若干の加工をしています）
+
+```csharp
+    public class GenExample0_ToggleGo : MonoBehaviour
+    {
+        public Animator animator;
+        public AnimatorController assetContainer;
+        public string assetKey;
+        public GameObject item;
+    }
+```
+
 * 次に続く `public class GenExample0_ToggleGoEditor : Editor` が実質的な AAC の利用プログラムコードになっています。
   - ただし使用例プログラムの共通部分は `AacExample.cs` に書かれているので、それと合わせて見る必要があります。
   - `GenExample0_ToggleGo.cs` の `public override void OnInspectorGUI()` は Inspector が画面を描画する際に呼び出すメソッドです。
@@ -66,16 +78,35 @@
   それぞれボタンが押された時に呼び出されます。
   - AAC におけるアニメーションの定義の仕方は、その `Create()` メソッドの中に書いてあります。
 
+```csharp
+        public override void OnInspectorGUI()
+        {
+            AacExample.InspectorTemplate(this, serializedObject, "assetKey", Create, Remove);
+        }
+
+        private void Create()
+        {
+```
+
+
 ### 初期化パラメタ
+
+```csharp
+        private void Create()
+        {
+            var my = (GenExample0_ToggleGo) target;
+            var aac = AacExample.AnimatorAsCode(SystemName, my.animator, my.assetContainer, my.assetKey, AacExample.Options().WriteDefaultsOff());
+```
 
 * では、その `Create()` メソッドを見ていきます
 * まず冒頭では `target` を、この example でのコンポーネント `GenExample0_ToggleGo` にキャストしています。設定値がここから取り出せるようにしています。
-* 次に `AacExample.AnimatorAsCode` を呼び出して AAC 利用の入り口となる [AacFlBase 型](README-original#base-aacflbase) のインスタンスを得ます。
+* 次に `AacExample.AnimatorAsCode` を呼び出して AAC 利用の入り口となる [AacFlBase 型](README-original.md#base-aacflbase) のインスタンスを得ます。
   - `AnimatorAsCode` メソッドにはオーバーロードがいくつかありますが、いずれにせよ `AacV0.Create` で `AacFlBase` を得ます。
   - この部分について、Examples を読んでいる今の段階で気に留めておくポイントは、初期化パラメータです。
     詳しくはオリジナルの README の [初期化の構成要素はここに](README-original.md#declare-an-animator-as-code-aac) 書いてあります。
     AAC を利用する際の構成を理解するのに必要なので、以下簡単に説明します。
-* `system name` : これから記述する複数のアニメーションから構成される“システム”の名前。生成されるレイヤーの名前などに使われます。
+* `system name` : これから記述する複数のアニメーションから構成される“システム”の名前。
+  - 生成されるレイヤーや animation clip の名前などに使われます。他の記述と重複しない文字列を指定します。
   - `GenExample0_ToggleGo.cs` では `GenExample0_ToggleGoEditor.SystemName` で定義した値を使うようになっています。
 * `Animator` : AAC で記述するアニメーションを設定する対象の Animator コンポーネント。
   - `GenExample0_ToggleGo.cs` では、`GenExample0_ToggleGo` コンポーネントに対して Inspector で指定したものを使うようになっています。
@@ -94,7 +125,8 @@
   - `GenExample0_ToggleGo.cs` では、Inspector で指定していればそれを、そうでなければ（つまり空欄だったら）ランダムな文字列を使うようになっています。
 * `defaults provider` : AAC が生成する各種アニメーション要素（例えば animation state）の設定値のデフォルトを与えるもの。
   - `GenExample0_ToggleGo.cs` ではフレームワークの [AacDefaultsProvider.cs](Framework/Editor/V0/AacDefaultsProvider.cs) の実装が使われます。
-  - （WriteDefaults の設定だけは容易に変更できる仕組みがあります。AAC の配布状態では WriteDefaults は false になるようになっています。）
+  - （WriteDefaults の設定だけは容易に変更できる仕組みがあり off を指定しています。）
+
 
 ### アニメーションの記述方法
 
@@ -103,6 +135,21 @@
   - "Shown" にいる間、アイテム GameObject を active にする。
   - "EnableItem" というパラメタで、二つのステートの遷移を制御する。
 * では `Create()` メソッドの続きを見ていきます。
+
+```csharp
+            var fx = aac.CreateMainLayer();
+
+            var hidden = fx.NewState("Hidden")
+                .WithAnimation(aac.NewClip().Toggling(my.item, false));
+            var shown = fx.NewState("Shown")
+                .WithAnimation(aac.NewClip().Toggling(my.item, true));
+
+            var itemParam = fx.BoolParameter("EnableItem");
+
+            hidden.TransitionsTo(shown).When(itemParam.IsTrue());
+            shown.TransitionsTo(hidden).When(itemParam.IsFalse());
+```
+
 * 前節で述べた `AacFlBase` インスタンスの `CreateMainLayer()` メソッドを呼び出し、レイヤー定義のためのオブジェクトを得ます。型は [AacFlLayer](README-original.md#layer-aacfllayer) です。
   - （オリジナルの AAC のサンプルではここは、アバターの FX レイヤーの Animator Controller を対象とするように書かれています。）
   - レイヤー名は引数ではなく、前節で説明した初期化時の `system name` によって決まるようになっています。
@@ -111,6 +158,7 @@
   - そのまま続けて state のアニメーションクリップを `WithAnimation` メソッドで設定しています。
 * アニメーションクリップの定義は `AacFlBase` の `NewClip()` メソッドで得た [AacFlClip](README-original.md#clip-aacflclip) に対して行います。
   - ここでは `Toggling` メソッドによって、GameObject の active を変化させるアニメーションを定義しています。
+  - 対象となる GameObject は、コンポーネントの public メンバー変数に定義して、Inspector で設定したもの（`my.item`）になっています。
 * 最期にステートの遷移を定義します。
   - まず [AacFlLayer](README-original.md#layer-aacfllayer) の `BoolParameter(string)` メソッドでアニメーションパラメタについて記述するオブジェクトを得ます。
   - `AacFlState` の [TransitionsTo](README-original.md#transitions) メソッドで遷移を記述するオブジェクトを得て `When` メソッドで遷移をするパラメタの条件を記述しています。
