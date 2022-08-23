@@ -51,9 +51,6 @@ namespace AnimatorAsCodeFramework.Examples
             var fx = aac.CreateMainLayer();
 #endif
 
-var gestureLeftWeight = fx.Av3().GestureLeftWeight;
-Debug.Log("gestureLeftWeight=" + gestureLeftWeight.Name);
-
             // The first created state is the default one connected to the "Entry" node.
             // States are automatically placed on the grid (see later in the manual).
             var hidden = fx.NewState("Hidden")
