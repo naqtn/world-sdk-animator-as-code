@@ -1,14 +1,22 @@
-﻿#if UNITY_EDITOR
+﻿#define WORLD_AAC
+
+#if UNITY_EDITOR
 using UnityEngine;
-using VRC.SDK3.Avatars.Components;
 using UnityEditor;
 using UnityEditor.Animations;
+#if !WORLD_AAC
+using VRC.SDK3.Avatars.Components;
+#endif
 
 namespace AnimatorAsCodeFramework.Examples
 {
     public class GenExampleManual_PlacingStates : MonoBehaviour
     {
+#if !WORLD_AAC
         public VRCAvatarDescriptor avatar;
+#else
+	public Animator animator;
+#endif
         public AnimatorController assetContainer;
         public string assetKey;
     }
@@ -26,9 +34,14 @@ namespace AnimatorAsCodeFramework.Examples
         private void Create()
         {
             var my = (GenExampleManual_PlacingStates) target;
-            var aac = AacExample.AnimatorAsCode(SystemName, my.avatar, my.assetContainer, my.assetKey);
 
+#if !WORLD_AAC
+            var aac = AacExample.AnimatorAsCode(SystemName, my.avatar, my.assetContainer, my.assetKey);
             var fx = aac.CreateMainFxLayer();
+#else
+            var aac = AacExample.AnimatorAsCode(SystemName, my.animator, my.assetContainer, my.assetKey);
+            var fx = aac.CreateMainLayer();
+#endif
 
             var init = fx.NewState("Init"); // This is the first state. By default it is at (0, 0)
             var a = fx.NewState("A"); // This will be placed under Init.
@@ -45,7 +58,11 @@ namespace AnimatorAsCodeFramework.Examples
         private void Remove()
         {
             var my = (GenExampleManual_PlacingStates) target;
+#if !WORLD_AAC
             var aac = AacExample.AnimatorAsCode(SystemName, my.avatar, my.assetContainer, my.assetKey);
+#else
+            var aac = AacExample.AnimatorAsCode(SystemName, my.animator, my.assetContainer, my.assetKey);
+#endif
 
             aac.RemoveAllMainLayers();
         }

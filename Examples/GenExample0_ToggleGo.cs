@@ -1,14 +1,23 @@
-﻿#if UNITY_EDITOR
+﻿#define WORLD_AAC
+
+#if UNITY_EDITOR
+
 using UnityEngine;
-using VRC.SDK3.Avatars.Components;
 using UnityEditor;
 using UnityEditor.Animations;
+#if !WORLD_AAC
+using VRC.SDK3.Avatars.Components;
+#endif
 
 namespace AnimatorAsCodeFramework.Examples
 {
     public class GenExample0_ToggleGo : MonoBehaviour
     {
+#if !WORLD_AAC
         public VRCAvatarDescriptor avatar;
+#else
+	public Animator animator;
+#endif
         public AnimatorController assetContainer;
         public string assetKey;
         public GameObject item;
@@ -27,15 +36,23 @@ namespace AnimatorAsCodeFramework.Examples
         private void Create()
         {
             var my = (GenExample0_ToggleGo) target;
+
+#if !WORLD_AAC
             // The avatar is used here:
             // - to find the FX playable layer animator, where a new layer will be created.
             // - to resolve the relative animation path to the item.
             // The generated animation files are stored in the asset container.
             var aac = AacExample.AnimatorAsCode(SystemName, my.avatar, my.assetContainer, my.assetKey, AacExample.Options().WriteDefaultsOff());
-
             // Create a layer in the FX animator.
             // Additional layers can be created in the FX animator (see later in the manual).
             var fx = aac.CreateMainFxLayer();
+#else
+            var aac = AacExample.AnimatorAsCode(SystemName, my.animator, my.assetContainer, my.assetKey, AacExample.Options().WriteDefaultsOff());
+            var fx = aac.CreateMainLayer();
+#endif
+
+var gestureLeftWeight = fx.Av3().GestureLeftWeight;
+Debug.Log("gestureLeftWeight=" + gestureLeftWeight.Name);
 
             // The first created state is the default one connected to the "Entry" node.
             // States are automatically placed on the grid (see later in the manual).
@@ -60,7 +77,11 @@ namespace AnimatorAsCodeFramework.Examples
         private void Remove()
         {
             var my = (GenExample0_ToggleGo) target;
+#if !WORLD_AAC
             var aac = AacExample.AnimatorAsCode(SystemName, my.avatar, my.assetContainer, my.assetKey);
+#else
+            var aac = AacExample.AnimatorAsCode(SystemName, my.animator, my.assetContainer, my.assetKey);
+#endif
 
             aac.RemoveAllMainLayers();
         }

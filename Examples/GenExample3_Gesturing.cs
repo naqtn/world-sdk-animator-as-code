@@ -1,16 +1,25 @@
-﻿#if UNITY_EDITOR
+﻿#define WORLD_AAC
+
+#if UNITY_EDITOR
+
 using System.Linq;
 using AnimatorAsCode.V0;
 using UnityEngine;
-using VRC.SDK3.Avatars.Components;
 using UnityEditor;
 using UnityEditor.Animations;
+#if !WORLD_AAC
+using VRC.SDK3.Avatars.Components;
+#endif
 
 namespace AnimatorAsCodeFramework.Examples
 {
     public class GenExample3_Gesturing : MonoBehaviour
     {
+#if !WORLD_AAC
         public VRCAvatarDescriptor avatar;
+#else
+	public Animator animator;
+#endif
         public AnimatorController assetContainer;
         public string assetKey;
         public SkinnedMeshRenderer iconMesh;
@@ -32,7 +41,12 @@ namespace AnimatorAsCodeFramework.Examples
         private void Create()
         {
             my = (GenExample3_Gesturing) target;
+
+#if !WORLD_AAC
             aac = AacExample.AnimatorAsCode(SystemName, my.avatar, my.assetContainer, my.assetKey);
+#else
+            aac = AacExample.AnimatorAsCode(SystemName, my.animator, my.assetContainer, my.assetKey);
+#endif
 
             CreateMainLayer();
             CreateSupportingLayer();
@@ -41,7 +55,12 @@ namespace AnimatorAsCodeFramework.Examples
         private void Remove()
         {
             var my = (GenExample3_Gesturing) target;
+
+#if !WORLD_AAC
             var aac = AacExample.AnimatorAsCode(SystemName, my.avatar, my.assetContainer, my.assetKey);
+#else
+            var aac = AacExample.AnimatorAsCode(SystemName, my.animator, my.assetContainer, my.assetKey);
+#endif
 
             aac.RemoveAllMainLayers();
             aac.RemoveAllSupportingLayers("Detection");
@@ -49,7 +68,11 @@ namespace AnimatorAsCodeFramework.Examples
 
         private void CreateMainLayer()
         {
+#if !WORLD_AAC
             var layer = aac.CreateMainFxLayer();
+#else
+            var layer = aac.CreateMainLayer();
+#endif
 
             var dirtyCheckParameter = layer.BoolParameter("AAC_INTERNAL_GesturingIcon_DirtyCheck");
 
@@ -69,7 +92,12 @@ namespace AnimatorAsCodeFramework.Examples
 
             // When this state is entered, the parameter is driven to the value of false.
             var stillChanging = layer.NewState("Still Changing", 0, 2).Under()
+#if !WORLD_AAC
                 .Drives(dirtyCheckParameter, false);
+#else
+	        // no Parameter Driver support on WORLD_AAC
+#endif
+		;
 
             // ------
 
@@ -97,7 +125,13 @@ namespace AnimatorAsCodeFramework.Examples
         private void CreateSupportingLayer()
         {
             // Create an additional FX layer.
+
+#if !WORLD_AAC
             var layer = aac.CreateSupportingFxLayer("Detection");
+#else
+            var layer = aac.CreateSupportingLayer("Detection");
+#endif
+
             var reevaluating = layer.NewState("Reevaluating", -1, 0);
 
             foreach (var left in Enumerable.Range(0, 8))
@@ -106,7 +140,13 @@ namespace AnimatorAsCodeFramework.Examples
                 {
                     var state = layer.NewState($"Gesture {left} {right}", left, right)
                         // When this state is entered, the parameter is driven to the value of true.
-                        .Drives(layer.BoolParameter("AAC_INTERNAL_GesturingIcon_DirtyCheck"), true);
+#if !WORLD_AAC
+                        .Drives(layer.BoolParameter("AAC_INTERNAL_GesturingIcon_DirtyCheck"), true)
+#else
+		        // no Parameter Driver support on WORLD_AAC
+#endif
+                        ;
+
 
                     reevaluating.TransitionsTo(state)
                         // Use ".Av3" to access VRChat standard parameters.

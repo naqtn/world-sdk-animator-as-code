@@ -1,10 +1,16 @@
-﻿using System;
+﻿#define WORLD_AAC
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.Animations;
 using UnityEngine;
+
+#if !WORLD_AAC
 using VRC.SDK3.Avatars.Components;
 using VRC.SDKBase;
+#endif
+
 
 // ReSharper disable once CheckNamespace
 namespace AnimatorAsCode.V0
@@ -205,9 +211,12 @@ namespace AnimatorAsCode.V0
         private readonly AnimatorStateMachine _machine;
         private readonly IAacDefaultsProvider _defaultsProvider;
         private readonly AacBackingAnimator _backingAnimator;
+
+#if !WORLD_AAC
         private VRCAvatarParameterDriver _driver;
         private VRCAnimatorTrackingControl _tracking;
         private VRCAnimatorLocomotionControl _locomotionControl;
+#endif
 
         public AacFlState(AnimatorState state, AnimatorStateMachine machine, IAacDefaultsProvider defaultsProvider)
         {
@@ -309,6 +318,7 @@ namespace AnimatorAsCode.V0
             return transition;
         }
 
+#if !WORLD_AAC
         public AacFlState Drives(AacFlIntParameter parameter, int value)
         {
             CreateDriverBehaviorIfNotExists();
@@ -447,6 +457,8 @@ namespace AnimatorAsCode.V0
             _driver = State.AddStateMachineBehaviour<VRCAvatarParameterDriver>();
             _driver.parameters = new List<VRC_AvatarParameterDriver.Parameter>();
         }
+#endif
+
 
         public AacFlState WithWriteDefaultsSetTo(bool shouldWriteDefaults)
         {
@@ -454,6 +466,7 @@ namespace AnimatorAsCode.V0
             return this;
         }
 
+#if !WORLD_AAC
         public AacFlState PrintsToLogUsingTrackingBehaviour(string value)
         {
             CreateTrackingBehaviorIfNotExists();
@@ -501,6 +514,7 @@ namespace AnimatorAsCode.V0
 
             return this;
         }
+#endif
 
         public AacFlState MotionTime(AacFlFloatParameter floatParam)
         {
@@ -510,6 +524,7 @@ namespace AnimatorAsCode.V0
             return this;
         }
 
+#if !WORLD_AAC
         private void SettingElementTo(TrackingElement element, VRC_AnimatorTrackingControl.TrackingType target)
         {
             switch (element)
@@ -575,6 +590,7 @@ namespace AnimatorAsCode.V0
             Eyes,
             Mouth
         }
+#endif
 
         public AacFlState WithSpeed(AacFlFloatParameter parameter)
         {

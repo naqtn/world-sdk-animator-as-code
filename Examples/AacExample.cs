@@ -1,9 +1,16 @@
 ﻿#if UNITY_EDITOR
+
+#define WORLD_AAC
+
 using System;
 using AnimatorAsCode.V0;
 using UnityEditor;
 using UnityEngine;
+
+#if !WORLD_AAC
 using VRC.SDK3.Avatars.Components;
+#endif
+
 using AnimatorController = UnityEditor.Animations.AnimatorController;
 
 namespace AnimatorAsCodeFramework.Examples
@@ -61,6 +68,7 @@ namespace AnimatorAsCodeFramework.Examples
             }
         }
 
+#if !WORLD_AAC
         /// <summary>
         /// Creates an AAC base with default options (write defaults OFF). This function is provided as an example on how to invoke AAC internals.
         /// </summary>
@@ -109,6 +117,31 @@ namespace AnimatorAsCodeFramework.Examples
             aac.ClearPreviousAssets();
             return aac;
         }
+
+#else
+
+        public static AacFlBase AnimatorAsCode(string systemName, Animator animator, AnimatorController assetContainer, string assetKey)
+        {
+            return AnimatorAsCode(systemName, animator, assetContainer, assetKey, TemplateGenOptions.Defaults());
+        }
+
+        public static AacFlBase AnimatorAsCode(string systemName, Animator animator, AnimatorController assetContainer, string assetKey, TemplateGenOptions options)
+        {
+            var aac = AacV0.Create(new AacConfiguration
+            {
+                SystemName = systemName,
+                Animator = animator,
+                AnimatorRoot = animator.transform,
+                DefaultValueRoot = animator.transform,
+                AssetContainer = assetContainer,
+                AssetKey = assetKey,
+                DefaultsProvider = new AacDefaultsProvider(writeDefaults: options.WriteDefaults)
+            });
+            aac.ClearPreviousAssets();
+            return aac;
+        }
+#endif
+
     }
 }
 #endif

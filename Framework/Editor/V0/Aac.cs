@@ -1,9 +1,15 @@
-﻿using System;
+﻿#define WORLD_AAC
+
+using System;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
+
+#if !WORLD_AAC
 using VRC.SDK3.Avatars.Components;
+#endif
+
 using Random = UnityEngine.Random;
 
 // ReSharper disable once CheckNamespace
@@ -16,10 +22,12 @@ namespace AnimatorAsCode.V0
             return new AacFlBase(configuration);
         }
 
+#if !WORLD_AAC
         internal static AnimatorController AnimatorOf(VRCAvatarDescriptor ad, VRCAvatarDescriptor.AnimLayerType animLayerType)
         {
             return (AnimatorController) ad.baseAnimationLayers.First(it => it.type == animLayerType).animatorController;
         }
+#endif
 
         internal static AnimationClip NewClip(AacConfiguration component, string suffix)
         {
@@ -82,7 +90,11 @@ namespace AnimatorAsCode.V0
     public struct AacConfiguration
     {
         public string SystemName;
+#if !WORLD_AAC
         public VRCAvatarDescriptor AvatarDescriptor;
+#else
+	public Animator Animator;
+#endif
         public Transform AnimatorRoot;
         public Transform DefaultValueRoot;
         public AnimatorController AssetContainer;
@@ -296,6 +308,7 @@ namespace AnimatorAsCode.V0
             RemoveLayerOnAllControllers(_configuration.DefaultsProvider.ConvertLayerNameWithSuffix(layerName, suffix));
         }
 
+#if !WORLD_AAC
         private void RemoveLayerOnAllControllers(string layerName)
         {
             var layers = _configuration.AvatarDescriptor.baseAnimationLayers.Select(layer => layer.animatorController).Where(layer => layer != null).Distinct().ToList();
@@ -319,10 +332,25 @@ namespace AnimatorAsCode.V0
         public AacFlLayer CreateSupportingLocomotionLayer(string suffix) => DoCreateSupportingLayerOnController(VRCAvatarDescriptor.AnimLayerType.Base, suffix);
         public AacFlLayer CreateSupportingAv3Layer(VRCAvatarDescriptor.AnimLayerType animLayerType, string suffix) => DoCreateSupportingLayerOnController(animLayerType, suffix);
 
+#else
+
+        private void RemoveLayerOnAllControllers(string layerName)
+        {
+            var customAnimLayer = _configuration.Animator.runtimeAnimatorController;
+            {
+                new AacAnimatorRemoval((AnimatorController) customAnimLayer).RemoveLayer(_configuration.DefaultsProvider.ConvertLayerName(layerName));
+            }
+        }
+
+        public AacFlLayer CreateMainLayer() => DoCreateMainLayerOnController();
+        public AacFlLayer CreateSupportingLayer(string suffix) => DoCreateSupportingLayerOnController(suffix);
+#endif
+
         public AacFlLayer CreateMainArbitraryControllerLayer(AnimatorController controller) => DoCreateLayer(controller, _configuration.DefaultsProvider.ConvertLayerName(_configuration.SystemName));
         public AacFlLayer CreateSupportingArbitraryControllerLayer(AnimatorController controller, string suffix) => DoCreateLayer(controller, _configuration.DefaultsProvider.ConvertLayerNameWithSuffix(_configuration.SystemName, suffix));
         public AacFlLayer CreateFirstArbitraryControllerLayer(AnimatorController controller) => DoCreateLayer(controller, controller.layers[0].name);
 
+#if !WORLD_AAC
         private AacFlLayer DoCreateMainLayerOnController(VRCAvatarDescriptor.AnimLayerType animType)
         {
             var animator = AacV0.AnimatorOf(_configuration.AvatarDescriptor, animType);
@@ -338,6 +366,26 @@ namespace AnimatorAsCode.V0
 
             return DoCreateLayer(animator, layerName);
         }
+
+#else
+        private AacFlLayer DoCreateMainLayerOnController()
+        {
+            var animator = (AnimatorController)_configuration.Animator.runtimeAnimatorController;
+            var layerName = _configuration.DefaultsProvider.ConvertLayerName(_configuration.SystemName);
+
+            return DoCreateLayer(animator, layerName);
+        }
+
+        private AacFlLayer DoCreateSupportingLayerOnController(string suffix)
+        {
+            var animator = (AnimatorController)_configuration.Animator.runtimeAnimatorController;
+            var layerName = _configuration.DefaultsProvider.ConvertLayerNameWithSuffix(_configuration.SystemName, suffix);
+
+            return DoCreateLayer(animator, layerName);
+        }
+
+#endif
+
 
         private AacFlLayer DoCreateLayer(AnimatorController animator, string layerName)
         {
