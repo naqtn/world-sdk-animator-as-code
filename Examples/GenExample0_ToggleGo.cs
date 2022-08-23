@@ -16,7 +16,7 @@ namespace AnimatorAsCodeFramework.Examples
 #if !WORLD_AAC
         public VRCAvatarDescriptor avatar;
 #else
-	public Animator animator;
+        public Animator animator;
 #endif
         public AnimatorController assetContainer;
         public string assetKey;
