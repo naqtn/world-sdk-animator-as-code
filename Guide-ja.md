@@ -169,3 +169,27 @@
 * Inspector 上の `GenExample0_ToggleGo` コンポーネントの `Remove` ボタンを押すと、`GenExample0_ToggleGo.cs` に書かれている `Remove` メソッドが動作します。
   - `Remove` メソッド では `RemoveAllMainLayers` メソッドを呼び出して、関連するレイヤーを削除しています。
   - （パラメタ定義は残ります。パラメタは `system name` で区別されるシステムの境界を越えて共通に利用されるので削除できないためだと思われます。）
+
+
+# オリジナルの av3-animator-as-code との API の違い
+
+オリジナルの av3-animator-as はアバター作成において使うように作られています。
+ワールド SDK 改変版ではアバターに依存している部分を取り除いて、API を若干変更しています。
+
+- AvatarDescriptor を Animator に置き換え
+    - オリジナルでは `AvatarDescriptor` を Animator を複数持つものとして、アニメーションを作成する対象として扱います。
+    - ワールドSDK改変版ではこれを一つの `Animator` に置き換えました。
+    - 初期化で指定する [struct AacConfiguration](README-original.md#declare-an-animator-as-code-aac) では、`AvatarDescriptor` ではなく `Animator` を指定してください。
+- "Playable Layers" 関連
+    - アバターの "Playable Layers" はワールド SDK においては対応物が無いので、`CreateMainFxLayer()` , `CreateMainGestureLayer()` といったメソッドは削除されています。
+    - 代わりに `CreateMainLayer()` メソッドを導入しました。
+    - Supporting Layers につても同様で `CreateSupportingLayer(string suffix)` メソッドを導入しています。
+- `VRCAvatarParameterDriver` 関連
+    - World SDK では `VRCAvatarParameterDriver` は使えないので、`AacFlState` の [Driver 関連のメソッド](README-original.md#avatar-parameter-driver-state-behaviour)  は削除されています。
+- `VRCAnimatorTrackingControl` 関連
+    - World SDK では `VRCAnimatorTrackingControl` は使えないので、`AacFlState` の [Tracking 関連のメソッド](README-original.md#other-state-behaviours) は削除されています。
+- `VRCAnimatorLocomotionControl` 関連	
+    - World SDK では `VRCAnimatorLocomotionControl` は使えないので、`AacFlState` の [Locomotion 関連のメソッド](README-original.md#other-state-behaviours) は削除されています。
+
+なお、サンプルについても代替物が無い部分は単に削除しているので、オリジナルと同様には動作しないものになっています。
+
